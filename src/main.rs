@@ -86,9 +86,13 @@ impl App for MainApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         let esc_pressed = ctx.input(|i| i.key_pressed(Key::Escape));
         if esc_pressed {
-            match self.state {
-                MainAppState::JobNumberInput(_) => {
-                    frame.close();
+            match &self.state {
+                MainAppState::JobNumberInput(jni) => {
+                    if jni.input.is_empty() {
+                        frame.close();
+                    } else {
+                        self.state = MainAppState::JobNumberInput(JobNumberInput::default());
+                    }
                 }
                 MainAppState::ScheduleEditor(_) => {
                     self.state = MainAppState::JobNumberInput(JobNumberInput::default());
