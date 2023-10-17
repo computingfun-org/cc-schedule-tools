@@ -84,23 +84,6 @@ enum MainAppState {
 
 impl App for MainApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        let esc_pressed = ctx.input(|i| i.key_pressed(Key::Escape));
-        if esc_pressed {
-            match &self.state {
-                MainAppState::JobNumberInput(jni) => {
-                    if jni.input.is_empty() {
-                        frame.close();
-                    } else {
-                        self.state = MainAppState::JobNumberInput(JobNumberInput::default());
-                    }
-                }
-                MainAppState::ScheduleEditor(_) => {
-                    self.state = MainAppState::JobNumberInput(JobNumberInput::default());
-                }
-            }
-            return;
-        }
-
         match &mut self.state {
             MainAppState::JobNumberInput(input) => match input.get() {
                 Some(job_num) => {
@@ -113,6 +96,16 @@ impl App for MainApp {
             },
             MainAppState::ScheduleEditor(editor) => {
                 editor.update(ctx, frame);
+            }
+        }
+    }
+
+    fn on_close_event(&mut self) -> bool {
+        match &mut self.state {
+            MainAppState::JobNumberInput(_) => true,
+            MainAppState::ScheduleEditor(_) => {
+                self.state = MainAppState::JobNumberInput(JobNumberInput::default());
+                false
             }
         }
     }
@@ -131,8 +124,16 @@ impl JobNumberInput {
 }
 
 impl App for JobNumberInput {
-    fn update(&mut self, ctx: &egui::Context, _sframe: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         let enter_pressed = ctx.input(|i| i.key_pressed(Key::Enter));
+        let esc_pressed = ctx.input(|i| i.key_pressed(Key::Escape));
+        if esc_pressed {
+            if self.input.is_empty() {
+                frame.close();
+            } else {
+                self.input.clear();
+            }
+        }
         CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered_justified(|ui| {
                 ui.heading("Job Number");
@@ -170,7 +171,11 @@ struct ScheduleEditor {
 }
 
 impl App for ScheduleEditor {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        let esc_pressed = ctx.input(|i| i.key_pressed(Key::Escape));
+        if esc_pressed {
+            frame.close();
+        }
         CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered_justified(|ui| {
                 ui.heading(format!("{:?}\n\n\n{:?}", self.job_num, self.schedule));
